@@ -1,2 +1,0 @@
-# MixDora-8x22B
-This repo contains training and deployment pipelines for Mixtral-8×22B (141B-parameter MoE) fine-tuned with QDoRA (QLoRA + DoRA adapters). Models were trained on 300k+ samples using SFT + preference optimization (DPO/ORPO) with FSDP/ZeRO-3 across 2× NVIDIA H200 GPUs.

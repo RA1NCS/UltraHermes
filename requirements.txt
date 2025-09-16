@@ -12,6 +12,7 @@ accelerate==1.9.0
 datasets==4.0.0
 huggingface-hub==0.34.0
 safetensors==0.4.5
+trl
 
 # PEFT + quantization
 peft==0.17.1

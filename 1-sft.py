@@ -173,7 +173,7 @@ peft_config = LoraConfig(
 
 ## TrainingArguments
 training_args = TrainingArguments(
-    output_dir=envar("save_dir"),
+    output_dir=envar("sft_save_dir"),
     per_device_train_batch_size=envar("per_device_train_batch_size", "int"),
     gradient_accumulation_steps=envar("gradient_accumulation_steps", "int"),
     learning_rate=envar("learning_rate", "float"),
@@ -293,6 +293,6 @@ trainer.train()
 
 
 # stage 7: save model
-model.save_pretrained(envar("save_dir"))
-tokenizer.save_pretrained(envar("save_dir"))
+model.save_pretrained(envar("sft_save_dir"))
+tokenizer.save_pretrained(envar("sft_save_dir"))
 
