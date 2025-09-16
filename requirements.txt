@@ -1,0 +1,34 @@
+# Use PyTorch cu124 index first so torch/aux libs resolve correctly
+--index-url https://download.pytorch.org/whl/cu124
+--extra-index-url https://pypi.org/simple
+
+# Core (matches the image you just showed)
+torch==2.6.0+cu124
+
+# Hugging Face stack (pinned to versions known good with FA2 and PT 2.6)
+transformers==4.56.1
+tokenizers==0.22.0
+accelerate==1.9.0
+datasets==4.0.0
+huggingface-hub==0.34.0
+safetensors==0.4.5
+
+# PEFT + quantization
+peft==0.17.1
+bitsandbytes==0.46.0
+
+# Experiment tracking
+mlflow==3.3.2
+
+# FlashAttention: exact wheel for Linux x86_64, Python 3.10, Torch 2.6, CUDA 12.4
+# (v0.4.11 has cp310/cu124/torch2.6 assets)
+flash-attn @ https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.4.11/flash_attn-2.8.3+cu124torch2.6-cp310-cp310-linux_x86_64.whl
+
+
+# LLM Evaluation
+lm-eval
+
+# Jupyter Notebook
+ipykernel==6.29.5
+jupyter_client==8.6.3
+jupyter_core==5.7.2
