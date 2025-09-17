@@ -13,9 +13,9 @@ python -m pip install --upgrade --ignore-installed blinker==1.9.0
 python -m pip install -r requirements.txt
 
 # Start MLflow UI
-mkdir -p /workspace/.mlflow
+mkdir -p /workspace/outputs/mlflow_runs
 nohup mlflow ui --host 0.0.0.0 --port 5000 \
-  --backend-store-uri /workspace/.mlflow > mlflow.log 2>&1 &
+  --backend-store-uri /workspace/outputs/mlflow_runs 2>&1 &
 
 echo "📊 MLflow UI: http://localhost:5000"
 

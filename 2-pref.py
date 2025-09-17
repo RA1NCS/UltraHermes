@@ -167,32 +167,39 @@ dpo_config = DPOConfig(
     warmup_ratio=envar("warmup_ratio","float"),
     weight_decay=envar("weight_decay","float"),
     num_train_epochs=envar("num_train_epochs","int"),
-    logging_steps=25,
-    save_strategy="epoch",
-    save_total_limit=2,
+
+    # logging & saving
+    logging_steps=5,
+    save_strategy="steps",
+    save_steps=100,
+    save_total_limit=3,
+    report_to="mlflow",
+    run_name="ultrahermes-pref",
+
+    # perf/stability
     bf16=(envar("bnb_compute_dtype") == "bfloat16"),
-    gradient_checkpointing=True,
+    gradient_checkpointing=False,
     max_grad_norm=envar("grad_clip","float"),
     optim="paged_adamw_8bit",
     lr_scheduler_type="cosine",
-    dataloader_num_workers=4,
+    dataloader_num_workers=0,
     dataloader_pin_memory=True,
     ddp_find_unused_parameters=False,
-    report_to="mlflow",
-    run_name="ultrahermes-pref",
+    ddp_timeout=1800,
     precompute_ref_log_probs=True,
     torch_compile=False,
-    group_by_length=True,
-    ddp_timeout=7200,
-    dataloader_num_workers=2,
-    dataloader_pin_memory=True,
+    group_by_length=False,
+
+    # nice to have in MLflow
+    include_tokens_per_second=True,
 
     # DPO-specific
     beta=0.1,
     max_prompt_length=512,
     max_completion_length=envar("max_seq_len","int") - 512,
     generate_during_eval=False,
-)   
+)
+
     
 
 # %%
@@ -228,8 +235,6 @@ print("policy model loaded")
 ### reference model preparation
 reference_model = load_model()
 reference_model = PeftModel.from_pretrained(reference_model, envar("sft_save_dir"), is_trainable=False)
-for param in reference_model.parameters():
-    param.requires_grad = False
 reference_model.eval()
 
 print("reference model loaded")
@@ -242,6 +247,11 @@ print(f"Trainable: {trainable/1e6:.2f}M / {total/1e6:.2f}M ({100*trainable/total
 
 
 # %%
+# Freeze DoRA magnitude vectors to avoid multiple grad hooks
+for n, p in policy_model.named_parameters():
+    if "lora_magnitude_vector" in n:
+        p.requires_grad = False
+
 # stage 4: build trainer
 trainer = DPOTrainer(
     model=policy_model,
@@ -251,14 +261,14 @@ trainer = DPOTrainer(
     processing_class=tokenizer,
 )
 
-# %%
-os.environ["ACCELERATE_CONFIG_FILE"] = "/workspace/.cache/huggingface/accelerate/default_config.yml"
-os.environ["CUDA_VISIBLE_DEVICES"]   = "0,1"
-os.environ["NCCL_ASYNC_ERROR_HANDLING"] = "1"
-os.environ["MLFLOW_TRACKING_URI"]   = envar("MLFLOW_TRACKING_URI")
-os.environ["MLFLOW_EXPERIMENT_NAME"] = envar("MLFLOW_EXPERIMENT_NAME")
+# DDP workaround for LoRA parameters
+if hasattr(trainer.model, "module"):
+    trainer.model.module._set_static_graph()
+elif hasattr(trainer.model, "_set_static_graph"):
+    trainer.model._set_static_graph()
 
-# stage 5: train
+# %%
+# stage 5: MLflow setup and training
 trainer.train()
 
 # %%
